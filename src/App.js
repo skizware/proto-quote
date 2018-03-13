@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import Quote from './quoting/quote-system';
+import Quote from './quoting/quote-system-ui';
 
 const testData = {
     dateCreated: "2018-02-22",

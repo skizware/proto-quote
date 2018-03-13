@@ -1,184 +1,161 @@
-import React, {Component} from 'react';
-
-const newUuid = function(){
-    return Math.random().toString(36).substr(2, 9);
-};
-
-class Quote extends Component {
-
-    constructor(props) {
-        super(props);
-
-        this.state = props.stateVal;
-    }
-
-    getQuoteCategoryKeys() {
-        return Object.keys(this.state.quoteCategories) || [];
-    }
-
-    getQuoteCategoryByKey(someKey) {
-        return this.state.quoteCategories[someKey];
-    }
-
-    updateCategory(catKey, catState) {
-        const newState = this.state;
-        newState.quoteCategories[catKey] = catState;
-        this.setState(newState);
-        console.log(this.state);
-    }
-
-    addNewCategory(){
-        const catKey = newUuid();
-        this.updateCategory(catKey, {});
-    }
-
-    render() {
-        return (
-            <div>
-                {this.getQuoteCategoryKeys().map((someKey, i) => {
-                    const props = {
-                        stateVal: this.getQuoteCategoryByKey(someKey),
-                        orderIndex: i,
-                        uuid: someKey,
-                        updateCallback: this.updateCategory.bind(this)
-                    };
-                    return <QuoteSection {...props}/>;
-                })}
-                <a href="#" onClick={this.addNewCategory.bind(this)}>+ Create new section</a>
-            </div>
-        );
-    }
-
-}
-
-class QuoteSection extends Component {
-    constructor(props) {
-        super(props);
-
-        this.state = props.stateVal;
-        this.props = props;
-    }
-
-    getSubCategoryKeys() {
-        if (this.state.subCategories !== undefined) {
-            return Object.keys(this.state.subCategories)
-        } else {
-            return []
-        }
-    }
-
-    getSubCategoryByKey(someKey) {
-        return this.state.subCategories[someKey];
-    }
-
-    getQuoteItemKeys() {
-        if (this.state.quoteItems !== undefined) {
-            return Object.keys(this.state.quoteItems);
-        }
-        else {
-            return [];
-        }
-    }
-
-    getQuoteItemByKey(key) {
-        return this.state.quoteItems[key];
-    }
-
-    updateParent(){
-        this.props.updateCallback(this.props.uuid, this.state);
-    }
-
-    onNameChange(evt){
-        const newState = this.state;
-        newState.categoryName = evt.target.value;
-        this.setState(newState);
-        this.updateParent();
-    }
-
-    updateSubCategory(subCatKey, subCatState){
-        const newState = this.state;
-        newState.subCategories[subCatKey] = subCatState;
-        this.setState(newState);
-        this.updateParent();
-    }
-
-    addNewSubCategory(){
-        const newState = this.state;
-        if(!newState.subCategories){
-            newState.subCategories = {};
-        }
-        newState.subCategories[newUuid()] = {};
-        this.setState(newState);
-        this.updateParent();
-    }
+const KEY_DATE_CREATED = 'dateCreated';
+const KEY_CURRENCY = 'currency';
+const KEY_QUOTE_CFG = 'quoteConfig';
+const KEY_CATEGORY_NAME = 'categoryName';
+const KEY_QUOTE_ITEM_NAME = 'itemName';
+const KEY_QUOTE_ITEM_RATE = 'itemRate';
+const KEY_QUOTE_ITEM_OVERALL_QUANTITY_LABEL = 'totalQuantityUnit';
+const KEY_QUOTE_ITEM_SUB_ITEMS = "subQuoteItems";
+const KEY_QUOTE_ITEM_QUANTITY_AND_UNITS_LIST = "itemQuantityAndUnitsList";
+const KEY_COMPOSITE_QUANTITY_UNIT = "unit";
+const KEY_LABELED_QUANTITY = "quantity";
+const KEY_LABELED_QUANTITY_LABEL = "label";
 
 
-    render() {
-        const theKeys = this.getSubCategoryKeys();
-        const quoteItemKeys = this.getQuoteItemKeys();
-        let addNewSubCat = null;
-        if(!this.props.isSubCategory){
-            addNewSubCat = <a href="#" onClick={this.addNewSubCategory.bind(this)}>+ Add new sub-category</a>
-        }
-        return (
-            <div>
-                <span>{''+(this.props.orderIndex + 1) + ' - '}</span>
-                <input id={this.props.uuid}
-                     key={this.props.uuid} defaultValue={this.state.categoryName} onChange={this.onNameChange.bind(this)}/>
-                {quoteItemKeys.map((key, i) => {
-                    return <QuoteItem stateVal={this.getQuoteItemByKey(key)} orderIndex={i} uuid={key} key={key}/>;
-                })}
-                {theKeys.map((key, i) => {
-                    {
-                        const props = {
-                            stateVal: this.getSubCategoryByKey(key),
-                            orderIndex: i,
-                            uuid: key,
-                            updateCallback: this.updateSubCategory.bind(this),
-                            isSubCategory: true
-                        };
+class Quote {
 
-                    return <QuoteSection {...props}/>}
-                })}
-                {addNewSubCat}
-            </div>
-        )
-    }
-}
+    constructor(data) {
+        console.log(data);
+        this._quoteCategories = [];
+        this._dateCreated = data[KEY_DATE_CREATED];
+        this._currency = data[KEY_CURRENCY];
+        this._quoteConfig = data[KEY_QUOTE_CFG];
 
-class QuoteItem extends Component {
-    constructor(props) {
-        super(props);
-
-        this.state = props.stateVal;
-        this.props = props;
-    }
-
-    getQuantityJsx() {
-        return this.state.itemQuantityAndUnitsList.map((quantityObject) => {
-            return quantityObject.quantities.map((individualQuantity, idx) => {
-                return (
-                    <span>
-                        <span>{individualQuantity.quantity}&nbsp;</span>
-                        <span>{individualQuantity.label}{individualQuantity.label !== '' ? ' ' : ''}</span>
-                        <span>{quantityObject.unit}{quantityObject.quantities.length - 1 !== idx ? ', ' : '. '}</span>
-                    </span>
-                )
-            });
+        data["quoteCategories"].map((categoryData) => {
+            this._quoteCategories.push(new ParentCategory(categoryData));
         });
     }
 
+}
 
-    render() {
-        return (
-            <div key={this.props.uuid}>
-                <span>{this.state.itemName} </span>
-                {this.getQuantityJsx()}
-            </div>
-        );
+class QuoteCategory {
 
+    constructor(data) {
+        this._categoryName = data[KEY_CATEGORY_NAME];
+        this._quoteItems = [];
+        data["quoteItems"].map((quoteItemData) => {
+            this._quoteItems.push(new ParentQuoteItem(quoteItemData));
+        });
+    }
+}
+
+class ParentCategory extends QuoteCategory {
+
+    constructor(data) {
+        super(data);
+        this._subCategories = [];
+        data["subCategories"].map((subCategoryData) => {
+            this._subCategories.push(new QuoteCategory(subCategoryData));
+        });
+    }
+
+}
+
+class QuoteItem {
+
+    constructor(data) {
+        this._itemName = data[KEY_QUOTE_ITEM_NAME];
+        this._itemRate = data[KEY_QUOTE_ITEM_RATE];
+        this._itemMarkup = undefined;
+        this._totalQuantityLabel = data[KEY_QUOTE_ITEM_OVERALL_QUANTITY_LABEL];
+        this._compositeQuantityList = [];
+        data[KEY_QUOTE_ITEM_QUANTITY_AND_UNITS_LIST].map((compositeQuantityData) => {
+            this._compositeQuantityList.push(new CompositeQuantity(compositeQuantityData));
+        });
+    }
+}
+
+class ParentQuoteItem extends QuoteItem {
+
+    constructor(data) {
+        super(data);
+        this._childQuoteItems = [];
+        data[KEY_QUOTE_ITEM_SUB_ITEMS].map((subQuoteItemData) => {
+            this._childQuoteItems.push(new QuoteItem(subQuoteItemData));
+        });
+    }
+}
+
+class LabeledQuantity {
+
+    constructor(quantity, label) {
+        this._quantity = quantity;
+        this.label = label;
+    }
+}
+
+class CompositeQuantity {
+
+    /*constructor(labeledQuantityList, overallUnit) {
+        this._labeledQuantityList = labeledQuantityList;
+        this._overallUnit = overallUnit;
+    }*/
+
+    constructor(data) {
+        this._labeledQuantityList = [];
+        this._overallUnit = data[KEY_COMPOSITE_QUANTITY_UNIT];
+        if (data.quantities) {
+            data.quantities.map((labeledQuantityData) => {
+                this._labeledQuantityList.push(new LabeledQuantity(labeledQuantityData[KEY_LABELED_QUANTITY], labeledQuantityData[KEY_LABELED_QUANTITY_LABEL]));
+            });
+        }
     }
 }
 
 
-export default Quote;
+const testData = {
+    dateCreated: "2018-02-22",
+    currency: "ZAR",
+    quoteConfig: {
+        markUpRate: 1.12
+    },
+    quoteCategories: [
+        {
+            categoryName: "CAST & CASTING",
+            quoteItems: [],
+            subCategories: [
+                {
+                    categoryName: "CASTING - JOHANNESBURG",
+                    quoteItems: [
+                        {
+                            itemName: "CASTING DIRECTOR PREP / RESEARCH",
+                            subQuoteItems: [],
+                            itemRate: 350000, //always using cents
+                            markupPercent: "cfg_markUpRate",
+                            totalQuantityUnit: "days",
+                            itemQuantityAndUnitsList: [
+                                {
+                                    quantities: [
+                                        {quantity: 2, label: ""}
+                                    ],
+                                    unit: "persons"
+                                },
+                                {
+                                    quantities: [
+                                        {quantity: 1, label: "prep/post"},
+                                        {quantity: 2, label: "shoot"}
+                                    ],
+                                    unit: "days"
+                                }
+                            ]
+                        },
+                        {
+                            itemName: "CASTING INCL CASTING DIR. & STUDIO",
+                            subQuoteItems: [],
+                            itemRate: 875000, //always using cents
+                            markupPercent: "cfg_markUpRate",
+                            itemQuantityAndUnitsList: [
+                                {
+                                    quantities: [
+                                        {quantity: 2, label: ""}
+                                    ],
+                                    unit: "days"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+};
