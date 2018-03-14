@@ -69,6 +69,15 @@ class Quote {
                 this._quoteCategories.push(new ParentCategory(this, categoryData));
             });
         }
+
+    }
+
+    newCategory(categoryName){
+        let catProps = {};
+        catProps[KEY_CATEGORY_NAME] = categoryName;
+        let newCategory = new ParentCategory(this, catProps)
+        this._quoteCategories.push(newCategory)
+        return newCategory;
     }
 
     getTotal() {
@@ -93,6 +102,27 @@ class Quote {
         return jsonRepresentation;
     }
 
+
+    getQuoteCategories() {
+        return this._quoteCategories;
+    }
+
+    getDateCreated() {
+        return this._dateCreated;
+    }
+
+    setDateCreated(value) {
+        this._dateCreated = value;
+    }
+
+    getCurrency() {
+        return this._currency;
+    }
+
+    setCurrency(value) {
+        this._currency = value;
+    }
+
 }
 
 class QuoteCategory extends BaseQuoteElement {
@@ -109,8 +139,12 @@ class QuoteCategory extends BaseQuoteElement {
         }
     }
 
-    addQuoteItem(quoteItem) {
-        this.quoteItems.push(quoteItem);
+    newQuoteItem(quoteItemName) {
+        let itemProps = {};
+        itemProps[KEY_QUOTE_ITEM_NAME] = quoteItemName;
+        let newItem = new QuoteItem(this, itemProps);
+        this._quoteItems.push(newItem);
+        return newItem;
     }
 
     getTotal() {
@@ -128,6 +162,18 @@ class QuoteCategory extends BaseQuoteElement {
         });
         return jsonRepresentation;
     }
+
+    getQuoteItems() {
+        return this._quoteItems;
+    }
+
+    getCategoryName() {
+        return this._categoryName;
+    }
+
+    setCategoryName(value) {
+        this._categoryName = value;
+    }
 }
 
 class ParentCategory extends QuoteCategory {
@@ -140,6 +186,19 @@ class ParentCategory extends QuoteCategory {
                 this._subCategories.push(new QuoteCategory(this, subCategoryData));
             });
         }
+    }
+
+    newSubCategory(subCatName){
+        let catProps = {};
+        catProps[KEY_CATEGORY_NAME] = subCatName;
+        let newSubCat = new QuoteCategory(this, catProps);
+        this._subCategories.push(newSubCat);
+        return newSubCat;
+    }
+
+
+    getSubCategories() {
+        return this._subCategories;
     }
 
     getTotal() {
@@ -167,8 +226,8 @@ class QuoteItem extends BaseQuoteElement {
         super(owningParent);
         this._itemName = data[KEY_QUOTE_ITEM_NAME];
         console.log("owningParent = " + owningParent + " " + this._owningParent._categoryName);
-        this._itemRate = data[KEY_QUOTE_ITEM_RATE];
-        this._itemMarkup = data[KEY_QUOTE_ITEM_MARKUP_PERCENT];
+        this._itemRate = data[KEY_QUOTE_ITEM_RATE] || 0;
+        this._itemMarkup = data[KEY_QUOTE_ITEM_MARKUP_PERCENT] || 1.0;
         this._totalQuantityLabel = data[KEY_QUOTE_ITEM_OVERALL_QUANTITY_LABEL];
         this._compositeQuantityList = [];
         if (data[KEY_QUOTE_ITEM_QUANTITY_AND_UNITS_LIST]) {
@@ -178,8 +237,52 @@ class QuoteItem extends BaseQuoteElement {
         }
     }
 
+
+    getItemName() {
+        return this._itemName;
+    }
+
+    setItemName(value) {
+        this._itemName = value;
+    }
+
+    getItemRate() {
+        return this._itemRate;
+    }
+
+    setItemRate(value) {
+        this._itemRate = value;
+    }
+
+    getItemMarkup() {
+        return this._getMarkupRate()
+    }
+
+    setItemMarkup(value) {
+        this._itemMarkup = value;
+    }
+
+    getTotalQuantityLabel() {
+        return this._totalQuantityLabel;
+    }
+
+    setTotalQuantityLabel(value) {
+        this._totalQuantityLabel = value;
+    }
+
+    getCompositeQuantityList() {
+        return this._compositeQuantityList;
+    }
+
     _getMarkupRate() {
         return this.getProperty(this._itemMarkup)
+    }
+
+    newCompositeQuantity(quantity, unit, subLabel){
+        let newQuantity  = new CompositeQuantity({});
+        newQuantity.setOverallUnit(unit);
+        newQuantity.newLabeledQuantity(quantity, subLabel);
+        this._compositeQuantityList.push(newQuantity);
     }
 
     getTotal() {
@@ -237,6 +340,19 @@ class CompositeQuantity {
                 this._labeledQuantityList.push(new LabeledQuantity(labeledQuantityData[KEY_LABELED_QUANTITY], labeledQuantityData[KEY_LABELED_QUANTITY_LABEL]));
             });
         }
+    }
+
+    newLabeledQuantity(quantity, label){
+        this._labeledQuantityList.push(new LabeledQuantity(quantity, label));
+    }
+
+
+    getOverallUnit() {
+        return this._overallUnit;
+    }
+
+    setOverallUnit(value) {
+        this._overallUnit = value;
     }
 
     getSummedQuantities() {
