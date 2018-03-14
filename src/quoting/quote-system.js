@@ -32,6 +32,12 @@ class Quote {
         }
     }
 
+    getTotal() {
+        return this._quoteCategories.reduce((runningTotal, category) => {
+            return runningTotal + category.getTotal();
+        }, 0);
+    }
+
     toJson() {
         let jsonRepresentation = {};
         jsonRepresentation[KEY_DATE_CREATED] = this._dateCreated;
@@ -58,6 +64,17 @@ class QuoteCategory {
         }
     }
 
+    addQuoteItem(quoteItem) {
+        quoteItem.setParent(this);
+        this.quoteItems.push(quoteItem);
+    }
+
+    getTotal() {
+        return this._quoteItems.reduce((runningTotal, quoteItem) => {
+            return runningTotal + quoteItem.getTotal();
+        }, 0)
+    }
+
     toJson() {
         let jsonRepresentation = {};
         jsonRepresentation[KEY_CATEGORY_NAME] = this._categoryName;
@@ -81,6 +98,14 @@ class ParentCategory extends QuoteCategory {
         }
     }
 
+    getTotal() {
+        let parentTotal = super.getTotal();
+        return this._subCategories.reduce((runningTotal, subCategory) => {
+            return runningTotal + subCategory.getTotal();
+        }, parentTotal);
+
+    }
+
     toJson() {
         let jsonRepresentation = super.toJson();
         jsonRepresentation[KEY_SUB_CATEGORIES_LIST] = [];
@@ -100,11 +125,30 @@ class QuoteItem {
         this._itemMarkup = data[KEY_QUOTE_ITEM_MARKUP_PERCENT];
         this._totalQuantityLabel = data[KEY_QUOTE_ITEM_OVERALL_QUANTITY_LABEL];
         this._compositeQuantityList = [];
+        this._owningParent = undefined;
         if (data[KEY_QUOTE_ITEM_QUANTITY_AND_UNITS_LIST]) {
             data[KEY_QUOTE_ITEM_QUANTITY_AND_UNITS_LIST].map((compositeQuantityData) => {
                 this._compositeQuantityList.push(new CompositeQuantity(compositeQuantityData));
             });
         }
+    }
+
+    getTotal() {
+        let totalQuantity = this._compositeQuantityList.reduce((previousValue, currentCompositeQuantity) => {
+            return previousValue * currentCompositeQuantity.getSummedQuantities();
+        }, 1);
+
+        let totalExMarkup = totalQuantity * this._itemRate;
+
+        return totalExMarkup;
+    }
+
+    setParent(parentRef) {
+        this._owningParent = parentRef;
+    }
+
+    getParent() {
+        return this._owningParent;
     }
 
     toJson() {
@@ -150,6 +194,10 @@ class LabeledQuantity {
         this.label = label;
     }
 
+    getQuantity() {
+        return this._quantity;
+    }
+
     toJson() {
         let jsonRepresentation = {};
         jsonRepresentation[KEY_LABELED_QUANTITY] = this._quantity;
@@ -168,6 +216,12 @@ class CompositeQuantity {
                 this._labeledQuantityList.push(new LabeledQuantity(labeledQuantityData[KEY_LABELED_QUANTITY], labeledQuantityData[KEY_LABELED_QUANTITY_LABEL]));
             });
         }
+    }
+
+    getSummedQuantities() {
+        return this._labeledQuantityList.reduce((previousSum, labeledQuantity) => {
+            return previousSum + labeledQuantity.getQuantity();
+        }, 0);
     }
 
     toJson() {
