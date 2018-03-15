@@ -9,7 +9,7 @@ const KEY_QUOTE_ITEM_NAME = 'itemName';
 const KEY_QUOTE_ITEM_RATE = 'itemRate';
 const KEY_QUOTE_ITEM_OVERALL_QUANTITY_LABEL = 'totalQuantityUnit';
 const KEY_QUOTE_ITEM_SUB_ITEMS = "subQuoteItems";
-const KEY_QUOTE_ITEM_QUANTITY_AND_UNITS_LIST = "itemQuantityAndUnitsList";
+const KEY_QUOTE_ITEM_LABELED_QUANTITIES_AND_UNIT = "labeledItemQuantities";
 const KEY_QUANTITIES_LIST = 'quantities';
 const KEY_SUB_CATEGORIES_LIST = "subCategories";
 const KEY_COMPOSITE_QUANTITY_UNIT = "unit";
@@ -43,14 +43,14 @@ class BaseQuoteElement {
         return this.getQuoteParent().getQuoteConfig()[configKey.substr(QUOTE_CONFIG_KEY_PREFIX.length)];
     }
 
-    _isPropertyFromConfig(property){
+    _isPropertyFromConfig(property) {
         return (typeof property === "string" && property.indexOf(QUOTE_CONFIG_KEY_PREFIX) !== -1);
     }
 
-    getProperty(property){
-        if(this._isPropertyFromConfig(property)){
+    getProperty(property) {
+        if (this._isPropertyFromConfig(property)) {
             return this._getQuoteConfigElement(property)
-        }else {
+        } else {
             return property;
         }
     }
@@ -72,7 +72,7 @@ class Quote {
 
     }
 
-    newCategory(categoryName){
+    newCategory(categoryName) {
         let catProps = {};
         catProps[KEY_CATEGORY_NAME] = categoryName;
         let newCategory = new ParentCategory(this, catProps)
@@ -86,7 +86,7 @@ class Quote {
         }, 0);
     }
 
-    getQuoteConfig(){
+    getQuoteConfig() {
         return this._quoteConfig;
     }
 
@@ -133,7 +133,6 @@ class QuoteCategory extends BaseQuoteElement {
         this._quoteItems = [];
         if (data[KEY_CATEGORY_QUOTE_ITEMS_LIST]) {
             data[KEY_CATEGORY_QUOTE_ITEMS_LIST].map((quoteItemData) => {
-                console.log("this = " + this + " " + this._categoryName);
                 this._quoteItems.push(new QuoteItem(this, quoteItemData));
             });
         }
@@ -188,7 +187,7 @@ class ParentCategory extends QuoteCategory {
         }
     }
 
-    newSubCategory(subCatName){
+    newSubCategory(subCatName) {
         let catProps = {};
         catProps[KEY_CATEGORY_NAME] = subCatName;
         let newSubCat = new QuoteCategory(this, catProps);
@@ -225,16 +224,9 @@ class QuoteItem extends BaseQuoteElement {
     constructor(owningParent, data) {
         super(owningParent);
         this._itemName = data[KEY_QUOTE_ITEM_NAME];
-        console.log("owningParent = " + owningParent + " " + this._owningParent._categoryName);
         this._itemRate = data[KEY_QUOTE_ITEM_RATE] || 0;
         this._itemMarkup = data[KEY_QUOTE_ITEM_MARKUP_PERCENT] || 1.0;
-        this._totalQuantityLabel = data[KEY_QUOTE_ITEM_OVERALL_QUANTITY_LABEL];
-        this._compositeQuantityList = [];
-        if (data[KEY_QUOTE_ITEM_QUANTITY_AND_UNITS_LIST]) {
-            data[KEY_QUOTE_ITEM_QUANTITY_AND_UNITS_LIST].map((compositeQuantityData) => {
-                this._compositeQuantityList.push(new CompositeQuantity(compositeQuantityData));
-            });
-        }
+        this._compositeQuantity = new CompositeQuantity(data[KEY_QUOTE_ITEM_LABELED_QUANTITIES_AND_UNIT]);
     }
 
 
@@ -262,39 +254,20 @@ class QuoteItem extends BaseQuoteElement {
         this._itemMarkup = value;
     }
 
-    getTotalQuantityLabel() {
-        return this._totalQuantityLabel;
-    }
-
-    setTotalQuantityLabel(value) {
-        this._totalQuantityLabel = value;
-    }
-
-    getCompositeQuantityList() {
-        return this._compositeQuantityList;
+    getCompositeQuantity() {
+        return this._compositeQuantity;
     }
 
     _getMarkupRate() {
         return this.getProperty(this._itemMarkup)
     }
 
-    newCompositeQuantity(quantity, unit, subLabel){
-        let newQuantity  = new CompositeQuantity({});
-        newQuantity.setOverallUnit(unit);
-        newQuantity.newLabeledQuantity(quantity, subLabel);
-        this._compositeQuantityList.push(newQuantity);
+    setCompositeQuantity(value) {
+        this._compositeQuantity = value;
     }
 
     getTotal() {
-        let totalQuantity = this._compositeQuantityList.reduce((previousValue, currentCompositeQuantity) => {
-            return previousValue * currentCompositeQuantity.getSummedQuantities();
-        }, 1);
-
-        let totalExMarkup = totalQuantity * this._itemRate;
-
-        console.log(this._getMarkupRate());
-
-        return totalExMarkup * this._getMarkupRate();
+        return this._compositeQuantity.getTotalQuantity() * this._itemRate * this._getMarkupRate();
     }
 
     toJson() {
@@ -302,11 +275,7 @@ class QuoteItem extends BaseQuoteElement {
         jsonRepresentation[KEY_QUOTE_ITEM_NAME] = this._itemName;
         jsonRepresentation[KEY_QUOTE_ITEM_RATE] = this._itemRate;
         jsonRepresentation[KEY_QUOTE_ITEM_MARKUP_PERCENT] = this._itemMarkup;
-        jsonRepresentation[KEY_QUOTE_ITEM_OVERALL_QUANTITY_LABEL] = this._totalQuantityLabel;
-        jsonRepresentation[KEY_QUOTE_ITEM_QUANTITY_AND_UNITS_LIST] = [];
-        this._compositeQuantityList.map((compositeQuantity) => {
-            jsonRepresentation[KEY_QUOTE_ITEM_QUANTITY_AND_UNITS_LIST].push(compositeQuantity.toJson());
-        });
+        jsonRepresentation[KEY_QUOTE_ITEM_LABELED_QUANTITIES_AND_UNIT] = this._compositeQuantity.toJson();
         return jsonRepresentation;
     }
 }
@@ -342,7 +311,7 @@ class CompositeQuantity {
         }
     }
 
-    newLabeledQuantity(quantity, label){
+    newLabeledQuantity(quantity, label) {
         this._labeledQuantityList.push(new LabeledQuantity(quantity, label));
     }
 
@@ -355,10 +324,10 @@ class CompositeQuantity {
         this._overallUnit = value;
     }
 
-    getSummedQuantities() {
+    getTotalQuantity() {
         return this._labeledQuantityList.reduce((previousSum, labeledQuantity) => {
-            return previousSum + labeledQuantity.getQuantity();
-        }, 0);
+            return previousSum * labeledQuantity.getQuantity();
+        }, 1);
     }
 
     toJson() {
@@ -392,35 +361,28 @@ const testData = {
                             itemRate: 350000, //always using cents
                             markupPercent: "cfg_markUpRate",
                             totalQuantityUnit: "days",
-                            itemQuantityAndUnitsList: [
+                            labeledItemQuantities:
                                 {
                                     quantities: [
-                                        {quantity: 2, label: ""}
-                                    ],
-                                    unit: "persons"
-                                },
-                                {
-                                    quantities: [
-                                        {quantity: 1, label: "prep/post"},
-                                        {quantity: 2, label: "shoot"}
+                                        {quantity: 2, label: "directors"},
+                                        {quantity: 3, label: "days"}
                                     ],
                                     unit: "days"
                                 }
-                            ]
+
                         },
                         {
                             itemName: "CASTING INCL CASTING DIR. & STUDIO",
                             subQuoteItems: [],
                             itemRate: 875000, //always using cents
                             markupPercent: "cfg_markUpRate",
-                            itemQuantityAndUnitsList: [
+                            labeledItemQuantities:
                                 {
                                     quantities: [
                                         {quantity: 2, label: ""}
                                     ],
                                     unit: "days"
                                 }
-                            ]
                         }
                     ]
                 }
