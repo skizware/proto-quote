@@ -34,17 +34,25 @@ class Quote extends Component {
 
     render() {
         return (
-            <div>
-                {this.getQuoteCategoryKeys().map((someKey, i) => {
-                    const props = {
-                        stateVal: this.getQuoteCategoryByKey(someKey),
-                        orderIndex: i,
-                        uuid: someKey,
-                        updateCallback: this.updateCategory.bind(this)
-                    };
-                    return <QuoteSection {...props}/>;
-                })}
-                <a href="#" onClick={this.addNewCategory.bind(this)}>+ Create new section</a>
+            <div className={'container-fluid'} id={'quoteContainer'}>
+                <div className={'card'}>
+                    <div className={'card-header'}>
+                        <div className={'col-sm-8'}>Quote Name: Some Quote</div>
+                        <div className={'col-sm-4'}>Date Created: 2018/01/01</div>
+                    </div>
+                    <form className={'cardBody'}>
+                        {this.getQuoteCategoryKeys().map((someKey, i) => {
+                            const props = {
+                                stateVal: this.getQuoteCategoryByKey(someKey),
+                                orderIndex: i,
+                                uuid: someKey,
+                                updateCallback: this.updateCategory.bind(this)
+                            };
+                            return <QuoteSection {...props}/>;
+                        })}
+                        <a href="#" onClick={this.addNewCategory.bind(this)}>+ Create new section</a>
+                    </form>
+                </div>
             </div>
         );
     }
@@ -121,26 +129,28 @@ class QuoteSection extends Component {
             addNewSubCat = <a href="#" onClick={this.addNewSubCategory.bind(this)}>+ Add new sub-category</a>
         }
         return (
-            <div>
-                <span>{''+(this.props.orderIndex + 1) + ' - '}</span>
-                <input id={this.props.uuid}
-                     key={this.props.uuid} defaultValue={this.state.categoryName} onChange={this.onNameChange.bind(this)}/>
-                {quoteItemKeys.map((key, i) => {
-                    return <QuoteItem stateVal={this.getQuoteItemByKey(key)} orderIndex={i} uuid={key} key={key}/>;
-                })}
-                {theKeys.map((key, i) => {
-                    {
-                        const props = {
-                            stateVal: this.getSubCategoryByKey(key),
-                            orderIndex: i,
-                            uuid: key,
-                            updateCallback: this.updateSubCategory.bind(this),
-                            isSubCategory: true
-                        };
+            <div className={'row quote-section'}>
+                <div className={'col-sm-12'}>
+                    <label for="this.props.uuid" className={'control-label'}>Section Name:</label>
+                    <input className={'form-control'} id={this.props.uuid}
+                           key={this.props.uuid} defaultValue={(this.props.orderIndex + 1) + ' - ' + this.state.categoryName} onChange={this.onNameChange.bind(this)}/>
+                    {quoteItemKeys.map((key, i) => {
+                        return <QuoteItem stateVal={this.getQuoteItemByKey(key)} orderIndex={i} uuid={key} key={key}/>;
+                    })}
+                    {theKeys.map((key, i) => {
+                        {
+                            const props = {
+                                stateVal: this.getSubCategoryByKey(key),
+                                orderIndex: i,
+                                uuid: key,
+                                updateCallback: this.updateSubCategory.bind(this),
+                                isSubCategory: true
+                            };
 
-                    return <QuoteSection {...props}/>}
-                })}
-                {addNewSubCat}
+                            return <QuoteSection {...props}/>}
+                    })}
+                    {addNewSubCat}
+                </div>
             </div>
         )
     }
