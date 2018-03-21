@@ -7,7 +7,6 @@ const KEY_CATEGORY_QUOTE_ITEMS_LIST = "quoteItems";
 const KEY_QUOTE_ITEM_MARKUP_PERCENT = "markupPercent";
 const KEY_QUOTE_ITEM_NAME = 'itemName';
 const KEY_QUOTE_ITEM_RATE = 'itemRate';
-const KEY_QUOTE_ITEM_OVERALL_QUANTITY_LABEL = 'totalQuantityUnit';
 const KEY_QUOTE_ITEM_SUB_ITEMS = "subQuoteItems";
 const KEY_QUOTE_ITEM_LABELED_QUANTITIES_AND_UNIT = "labeledItemQuantities";
 const KEY_QUANTITIES_LIST = 'quantities';
@@ -62,11 +61,11 @@ class Quote {
         this._quoteCategories = [];
         this._dateCreated = data[KEY_DATE_CREATED] || Date.parse(new Date().toUTCString());
         this._currency = data[KEY_CURRENCY];
-        this._quoteConfig = data[KEY_QUOTE_CFG];
+        this._quoteConfig = data[KEY_QUOTE_CFG] || {};
 
         if (data[KEY_QUOTE_CATEGORIES]) {
             data[KEY_QUOTE_CATEGORIES].map((categoryData) => {
-                this._quoteCategories.push(new ParentCategory(this, categoryData));
+                this._quoteCategories.push(new QuoteCategory(this, categoryData));
             });
         }
 
@@ -75,8 +74,8 @@ class Quote {
     newCategory(categoryName) {
         let catProps = {};
         catProps[KEY_CATEGORY_NAME] = categoryName;
-        let newCategory = new ParentCategory(this, catProps)
-        this._quoteCategories.push(newCategory)
+        let newCategory = new QuoteCategory(this, catProps);
+        this._quoteCategories.push(newCategory);
         return newCategory;
     }
 
@@ -136,6 +135,12 @@ class QuoteCategory extends BaseQuoteElement {
                 this._quoteItems.push(new QuoteItem(this, quoteItemData));
             });
         }
+        this._subCategories = [];
+        if (data[KEY_SUB_CATEGORIES_LIST]) {
+            data[KEY_SUB_CATEGORIES_LIST].map((subCategoryData) => {
+                this._subCategories.push(new QuoteCategory(this, subCategoryData));
+            });
+        }
     }
 
     newQuoteItem(quoteItemName) {
@@ -144,47 +149,6 @@ class QuoteCategory extends BaseQuoteElement {
         let newItem = new QuoteItem(this, itemProps);
         this._quoteItems.push(newItem);
         return newItem;
-    }
-
-    getTotal() {
-        return this._quoteItems.reduce((runningTotal, quoteItem) => {
-            return runningTotal + quoteItem.getTotal();
-        }, 0)
-    }
-
-    toJson() {
-        let jsonRepresentation = {};
-        jsonRepresentation[KEY_CATEGORY_NAME] = this._categoryName;
-        jsonRepresentation[KEY_CATEGORY_QUOTE_ITEMS_LIST] = [];
-        this._quoteItems.map((quoteItem) => {
-            jsonRepresentation[KEY_CATEGORY_QUOTE_ITEMS_LIST].push(quoteItem.toJson());
-        });
-        return jsonRepresentation;
-    }
-
-    getQuoteItems() {
-        return this._quoteItems;
-    }
-
-    getCategoryName() {
-        return this._categoryName;
-    }
-
-    setCategoryName(value) {
-        this._categoryName = value;
-    }
-}
-
-class ParentCategory extends QuoteCategory {
-
-    constructor(owningQuote, data) {
-        super(owningQuote, data);
-        this._subCategories = [];
-        if (data[KEY_SUB_CATEGORIES_LIST]) {
-            data[KEY_SUB_CATEGORIES_LIST].map((subCategoryData) => {
-                this._subCategories.push(new QuoteCategory(this, subCategoryData));
-            });
-        }
     }
 
     newSubCategory(subCatName) {
@@ -201,15 +165,21 @@ class ParentCategory extends QuoteCategory {
     }
 
     getTotal() {
-        let parentTotal = super.getTotal();
+        let thisTotal = this._quoteItems.reduce((runningTotal, quoteItem) => {
+            return runningTotal + quoteItem.getTotal();
+        }, 0);
         return this._subCategories.reduce((runningTotal, subCategory) => {
             return runningTotal + subCategory.getTotal();
-        }, parentTotal);
-
+        }, thisTotal);
     }
 
     toJson() {
-        let jsonRepresentation = super.toJson();
+        let jsonRepresentation = {};
+        jsonRepresentation[KEY_CATEGORY_NAME] = this._categoryName;
+        jsonRepresentation[KEY_CATEGORY_QUOTE_ITEMS_LIST] = [];
+        this._quoteItems.map((quoteItem) => {
+            jsonRepresentation[KEY_CATEGORY_QUOTE_ITEMS_LIST].push(quoteItem.toJson());
+        });
         jsonRepresentation[KEY_SUB_CATEGORIES_LIST] = [];
         this._subCategories.map((subCategory) => {
             jsonRepresentation[KEY_SUB_CATEGORIES_LIST].push(subCategory.toJson());
@@ -217,6 +187,17 @@ class ParentCategory extends QuoteCategory {
         return jsonRepresentation;
     }
 
+    getQuoteItems() {
+        return this._quoteItems;
+    }
+
+    getCategoryName() {
+        return this._categoryName;
+    }
+
+    setCategoryName(value) {
+        this._categoryName = value;
+    }
 }
 
 class QuoteItem extends BaseQuoteElement {
@@ -360,7 +341,6 @@ const testData = {
                             subQuoteItems: [],
                             itemRate: 350000, //always using cents
                             markupPercent: "cfg_markUpRate",
-                            totalQuantityUnit: "days",
                             labeledItemQuantities:
                                 {
                                     quantities: [
