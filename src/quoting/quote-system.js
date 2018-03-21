@@ -9,6 +9,7 @@ const KEY_QUOTE_ITEM_NAME = 'itemName';
 const KEY_QUOTE_ITEM_RATE = 'itemRate';
 const KEY_QUOTE_ITEM_SUB_ITEMS = "subQuoteItems";
 const KEY_QUOTE_ITEM_LABELED_QUANTITIES_AND_UNIT = "labeledItemQuantities";
+const KEY_QUOTE_TITLE = "quoteTitle";
 const KEY_QUANTITIES_LIST = 'quantities';
 const KEY_SUB_CATEGORIES_LIST = "subCategories";
 const KEY_COMPOSITE_QUANTITY_UNIT = "unit";
@@ -62,6 +63,7 @@ class Quote {
         this._dateCreated = data[KEY_DATE_CREATED] || Date.parse(new Date().toUTCString());
         this._currency = data[KEY_CURRENCY];
         this._quoteConfig = data[KEY_QUOTE_CFG] || {};
+        this._title = data[KEY_QUOTE_TITLE] || '';
 
         if (data[KEY_QUOTE_CATEGORIES]) {
             data[KEY_QUOTE_CATEGORIES].map((categoryData) => {
@@ -122,6 +124,14 @@ class Quote {
         this._currency = value;
     }
 
+
+    getTitle() {
+        return this._title;
+    }
+
+    setTitle(value) {
+        this._title = value;
+    }
 }
 
 class QuoteCategory extends BaseQuoteElement {
@@ -247,8 +257,12 @@ class QuoteItem extends BaseQuoteElement {
         this._compositeQuantity = value;
     }
 
+    getTotalQuantity(){
+        return this._compositeQuantity.getTotalQuantity();
+    }
+
     getTotal() {
-        return this._compositeQuantity.getTotalQuantity() * this._itemRate * this._getMarkupRate();
+        return this.getTotalQuantity() * this._itemRate * this._getMarkupRate();
     }
 
     toJson() {
@@ -370,3 +384,7 @@ const testData = {
         }
     ]
 };
+
+module.exports.Quote = Quote;
+module.exports.QuoteCategory = QuoteCategory;
+module.exports.QuoteItem = QuoteItem;

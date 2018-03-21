@@ -14,17 +14,16 @@
   color: white;
 }
 
-.quote-header{
-  padding: 10px;
+.quote textarea {
+  width: 100%;
+  height: 35px;
+  border: none;
+  border-bottom: 1px solid lightblue;
+  background-color: inherit;
 }
 
-.quote-section{
-  padding-bottom: 10px;
-}
-
-.quote-section .quote-section{
-  padding-top:10px;
-  padding-left:20px;
+ul.quote-item-list li{
+  margin-left:20px;
 }
 
 .App-title {
@@ -38,4 +37,16 @@
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.card.quote-section .card-header{
+  background-color:lightgray;
+}
+
+.quote-sections .quote-section{
+  margin-bottom: 20px;
+}
+
+.quote-section .quote-section:last-child{
+  margin-bottom: 0px;
 }

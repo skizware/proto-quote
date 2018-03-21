@@ -1,74 +1,99 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import Quote from './quoting/quote-system-ui';
+import QuoteEditor from './quoting/quote-system-ui';
 
 const testData = {
-    dateCreated: "2018-02-22",
+    dateCreated: 1521014398000,
     currency: "ZAR",
     quoteConfig: {
         markUpRate: 1.12
     },
-    quoteCategories: {
-        "44g423f":{
+    quoteCategories: [
+        {
             categoryName: "CAST & CASTING",
-            quoteItems: {},
-            subCategories: {
-                "45dsgs43":{
+            quoteItems: [],
+            subCategories: [
+                {
                     categoryName: "CASTING - JOHANNESBURG",
-                    quoteItems: {
-                        "87dsf78":{
+                    quoteItems: [
+                        {
                             itemName: "CASTING DIRECTOR PREP / RESEARCH",
                             subQuoteItems: [],
                             itemRate: 350000, //always using cents
                             markupPercent: "cfg_markUpRate",
-                            totalQuantityUnit: "days",
-                            itemQuantityAndUnitsList: [
-                                {
-                                    quantities:[
-                                        {quantity: 2, label: ""}
-                                    ],
-                                    unit: "persons"
-                                },
+                            labeledItemQuantities:
                                 {
                                     quantities: [
-                                        {quantity: 1, label: "prep/post"},
-                                        {quantity: 2, label: "shoot"}
+                                        {quantity: 2, label: "directors"},
+                                        {quantity: 3, label: "days"}
                                     ],
                                     unit: "days"
                                 }
-                            ]
+
                         },
-                        "87dsf79":{
+                        {
                             itemName: "CASTING INCL CASTING DIR. & STUDIO",
                             subQuoteItems: [],
                             itemRate: 875000, //always using cents
                             markupPercent: "cfg_markUpRate",
-                            itemQuantityAndUnitsList: [
+                            labeledItemQuantities:
                                 {
-                                    quantities:[
+                                    quantities: [
                                         {quantity: 2, label: ""}
                                     ],
                                     unit: "days"
                                 }
-                            ]
                         }
-                    }
+                    ]
+                },
+                {
+                    categoryName: "CASTING - CAPE TOWN",
+                    quoteItems: [
+                        {
+                            itemName: "CASTING DIRECTOR PREP / RESEARCH",
+                            subQuoteItems: [],
+                            itemRate: 350000, //always using cents
+                            markupPercent: "cfg_markUpRate",
+                            labeledItemQuantities:
+                                {
+                                    quantities: [
+                                        {quantity: 1, label: "directors"},
+                                        {quantity: 3, label: "days"}
+                                    ],
+                                    unit: "days"
+                                }
+
+                        },
+                        {
+                            itemName: "CASTING INCL CASTING DIR. & STUDIO",
+                            subQuoteItems: [],
+                            itemRate: 875000, //always using cents
+                            markupPercent: "cfg_markUpRate",
+                            labeledItemQuantities:
+                                {
+                                    quantities: [
+                                        {quantity: 2, label: ""}
+                                    ],
+                                    unit: "days"
+                                }
+                        }
+                    ]
                 }
-            }
+            ]
         }
-    }
+    ]
 };
 
 class App extends Component {
   render() {
     return (
-      <div className="App">
+      <div className="App container-fluid">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
           <h1 className="App-title">Welcome to React</h1>
         </header>
-        <Quote stateVal={testData} key={123}/>
+        <QuoteEditor stateVal={testData} key={123}/>
       </div>
     );
   }
